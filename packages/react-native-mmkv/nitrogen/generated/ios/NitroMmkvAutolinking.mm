@@ -10,6 +10,7 @@
 #import "NitroMmkv-Swift-Cxx-Umbrella.hpp"
 #import <type_traits>
 
+#include "HybridMMKV.hpp"
 #include "HybridMMKVFactory.hpp"
 #include "HybridMMKVPlatformContextSpecSwift.hpp"
 
@@ -22,6 +23,15 @@
   using namespace margelo::nitro;
   using namespace margelo::nitro::mmkv;
 
+  HybridObjectRegistry::registerHybridObjectConstructor(
+    "MMKV",
+    []() -> std::shared_ptr<HybridObject> {
+      static_assert(std::is_default_constructible_v<HybridMMKV>,
+                    "The HybridObject \"HybridMMKV\" is not default-constructible! "
+                    "Create a public constructor that takes zero arguments to be able to autolink this HybridObject.");
+      return std::make_shared<HybridMMKV>();
+    }
+  );
   HybridObjectRegistry::registerHybridObjectConstructor(
     "MMKVFactory",
     []() -> std::shared_ptr<HybridObject> {

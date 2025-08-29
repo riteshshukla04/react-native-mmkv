@@ -8,6 +8,9 @@ export function createMockMMKV(): MMKV {
   const listeners = new Set<(key: string) => void>()
 
   return {
+    initialize: () => {
+      // no-op for mock
+    },
     clearAll: () => storage.clear(),
     remove: (key) => storage.delete(key),
     set: (key, value) => storage.set(key, value),

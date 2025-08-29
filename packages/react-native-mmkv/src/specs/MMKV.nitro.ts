@@ -1,10 +1,16 @@
 import type { HybridObject } from 'react-native-nitro-modules'
+import type { Configuration } from './MMKVFactory.nitro'
 
 export interface Listener {
   remove: () => void
 }
 
 export interface MMKV extends HybridObject<{ ios: 'c++'; android: 'c++' }> {
+  /**
+   * Initialize the MMKV instance with the given configuration.
+   * This method is called automatically by createMMKV().
+   */
+  initialize(configuration: Configuration): void
   /**
    * Set a value for the given `key`.
    *

@@ -9,34 +9,98 @@
 #include "MMKVTypes.hpp"
 #include "MMKVValueChangedListenerRegistry.hpp"
 #include "ManagedMMBuffer.hpp"
+#include "HybridMMKVFactory.hpp"
+#include "HybridMMKVPlatformContextSpec.hpp"
 #include <NitroModules/NitroLogger.hpp>
+#include <NitroModules/HybridObjectRegistry.hpp>
 
 namespace margelo::nitro::mmkv {
 
-HybridMMKV::HybridMMKV(const Configuration& config) : HybridObject(TAG) {
-  std::string path = config.path.has_value() ? config.path.value() : "";
-  std::string encryptionKey = config.encryptionKey.has_value() ? config.encryptionKey.value() : "";
+// Static helper function for MMKV initialization logic
+static void ensureMMKVInitialized() {
+  static bool isMMKVInitialized = false;
+  if (!isMMKVInitialized) {
+    // Create platform context and factory to initialize MMKV
+    auto platformContext = std::dynamic_pointer_cast<HybridMMKVPlatformContextSpec>(
+      HybridObjectRegistry::createHybridObject("MMKVPlatformContext")
+    );
+    std::string baseDirectory = platformContext->getBaseDirectory();
+    
+    Logger::log(LogLevel::Info, "MMKV", "Initializing MMKV with rootPath=%s", baseDirectory.c_str());
+    
+#ifdef NITRO_DEBUG
+    MMKVLogLevel logLevel = ::mmkv::MMKVLogDebug;
+#else
+    MMKVLogLevel logLevel = ::mmkv::MMKVLogWarning;
+#endif
+    MMKV::initializeMMKV(baseDirectory, logLevel);
+    isMMKVInitialized = true;
+  }
+}
+
+HybridMMKV::HybridMMKV() : HybridObject(TAG), instance(nullptr), isInitialized(false) {
+  // Default constructor for autolinking - instance will be initialized later via initialize() method
+}
+
+HybridMMKV::HybridMMKV(const Configuration& config) : HybridObject(TAG), instance(nullptr), isInitialized(false) {
+  initialize(config);
+}
+
+void HybridMMKV::initialize(const Configuration& config) {
+  if (isInitialized) {
+    Logger::log(LogLevel::Warning, TAG, "MMKV instance already initialized!");
+    return;
+  }
+  // Ensure MMKV library is initialized
+  ensureMMKVInitialized();
+
+  // Process configuration - handle defaults and platform-specific logic
+  Configuration processedConfig = config;
+  
+  // If no ID provided, use default
+  if (processedConfig.id.empty()) {
+    processedConfig.id = DEFAULT_MMAP_ID;
+  }
+  
+#ifdef __APPLE__
+  // Handle iOS App Group path detection
+  if (!processedConfig.path.has_value()) {
+    auto platformContext = std::dynamic_pointer_cast<HybridMMKVPlatformContextSpec>(
+      HybridObjectRegistry::createHybridObject("MMKVPlatformContext")
+    );
+    std::string appGroupDirectory = platformContext->getAppGroupDirectory();
+    if (!appGroupDirectory.empty()) {
+      processedConfig.path = appGroupDirectory;
+    }
+  }
+#endif
+
+  // Extract configuration values
+  std::string path = processedConfig.path.has_value() ? processedConfig.path.value() : "";
+  std::string encryptionKey = processedConfig.encryptionKey.has_value() ? processedConfig.encryptionKey.value() : "";
   bool hasEncryptionKey = encryptionKey.size() > 0;
-  Logger::log(LogLevel::Info, TAG, "Creating MMKV instance \"%s\"... (Path: %s, Encrypted: %s)", config.id.c_str(), path.c_str(),
-              hasEncryptionKey ? "true" : "false");
+  
+  Logger::log(LogLevel::Info, TAG, "Creating MMKV instance \"%s\"... (Path: %s, Encrypted: %s)", 
+              processedConfig.id.c_str(), path.c_str(), hasEncryptionKey ? "true" : "false");
 
   std::string* pathPtr = path.size() > 0 ? &path : nullptr;
   std::string* encryptionKeyPtr = encryptionKey.size() > 0 ? &encryptionKey : nullptr;
-  MMKVMode mode = getMMKVMode(config);
-  if (config.readOnly.has_value() && config.readOnly.value()) {
+  MMKVMode mode = getMMKVMode(processedConfig);
+  
+  if (processedConfig.readOnly.has_value() && processedConfig.readOnly.value()) {
     Logger::log(LogLevel::Info, TAG, "Instance is read-only!");
     mode = mode | ::mmkv::MMKV_READ_ONLY;
   }
 
 #ifdef __APPLE__
-  instance = MMKV::mmkvWithID(config.id, mode, encryptionKeyPtr, pathPtr);
+  instance = MMKV::mmkvWithID(processedConfig.id, mode, encryptionKeyPtr, pathPtr);
 #else
-  instance = MMKV::mmkvWithID(config.id, DEFAULT_MMAP_SIZE, mode, encryptionKeyPtr, pathPtr);
+  instance = MMKV::mmkvWithID(processedConfig.id, DEFAULT_MMAP_SIZE, mode, encryptionKeyPtr, pathPtr);
 #endif
 
   if (instance == nullptr) [[unlikely]] {
     // Check if instanceId is invalid
-    if (config.id.empty()) [[unlikely]] {
+    if (processedConfig.id.empty()) [[unlikely]] {
       throw std::runtime_error("Failed to create MMKV instance! `id` cannot be empty!");
     }
 
@@ -53,12 +117,20 @@ HybridMMKV::HybridMMKV(const Configuration& config) : HybridObject(TAG) {
 
     throw std::runtime_error("Failed to create MMKV instance!");
   }
+  
+  isInitialized = true;
 }
 
 double HybridMMKV::getSize() {
+  if (!isInitialized || instance == nullptr) {
+    throw std::runtime_error("MMKV instance not initialized!");
+  }
   return instance->actualSize();
 }
 bool HybridMMKV::getIsReadOnly() {
+  if (!isInitialized || instance == nullptr) {
+    throw std::runtime_error("MMKV instance not initialized!");
+  }
   return instance->isReadOnly();
 }
 

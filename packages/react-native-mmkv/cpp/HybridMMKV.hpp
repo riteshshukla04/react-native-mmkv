@@ -15,7 +15,13 @@ namespace margelo::nitro::mmkv {
 
 class HybridMMKV final : public HybridMMKVSpec {
 public:
+  // Default constructor for autolinking
+  HybridMMKV();
+  // Parameterized constructor for factory pattern (backward compatibility)
   explicit HybridMMKV(const Configuration& configuration);
+  
+  // Initialize the instance with configuration (for autolinking usage)
+  void initialize(const Configuration& configuration) override;
 
 public:
   // Properties
@@ -42,6 +48,7 @@ private:
 
 private:
   MMKV* instance;
+  bool isInitialized;
 };
 
 } // namespace margelo::nitro::mmkv

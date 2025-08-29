@@ -16,6 +16,7 @@
 #include <NitroModules/HybridObjectRegistry.hpp>
 
 #include "JHybridMMKVPlatformContextSpec.hpp"
+#include "HybridMMKV.hpp"
 #include "HybridMMKVFactory.hpp"
 #include <NitroModules/DefaultConstructableObject.hpp>
 
@@ -32,6 +33,15 @@ int initialize(JavaVM* vm) {
 
     // Register Nitro Hybrid Objects
     HybridObjectRegistry::registerHybridObjectConstructor(
+      "MMKV",
+      []() -> std::shared_ptr<HybridObject> {
+        static_assert(std::is_default_constructible_v<HybridMMKV>,
+                      "The HybridObject \"HybridMMKV\" is not default-constructible! "
+                      "Create a public constructor that takes zero arguments to be able to autolink this HybridObject.");
+        return std::make_shared<HybridMMKV>();
+      }
+    );
+    HybridObjectRegistry::registerHybridObjectConstructor(
       "MMKVFactory",
       []() -> std::shared_ptr<HybridObject> {
         static_assert(std::is_default_constructible_v<HybridMMKVFactory>,
@@ -45,8 +55,7 @@ int initialize(JavaVM* vm) {
       []() -> std::shared_ptr<HybridObject> {
         static DefaultConstructableObject<JHybridMMKVPlatformContextSpec::javaobject> object("com/margelo/nitro/mmkv/HybridMMKVPlatformContext");
         auto instance = object.create();
-        auto globalRef = jni::make_global(instance);
-        return globalRef->cthis()->shared();
+        return instance->cthis()->shared();
       }
     );
   });

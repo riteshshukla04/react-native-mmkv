@@ -79,6 +79,9 @@ export function createMMKV(config: Configuration): MMKV {
   }
 
   return {
+    initialize: () => {
+      // no-op for web - already initialized
+    },
     clearAll: () => {
       const keys = Object.keys(storage())
       for (const key of keys) {

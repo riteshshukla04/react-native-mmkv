@@ -16,6 +16,7 @@ namespace margelo::nitro::mmkv {
     registerHybrids(this, [](Prototype& prototype) {
       prototype.registerHybridGetter("size", &HybridMMKVSpec::getSize);
       prototype.registerHybridGetter("isReadOnly", &HybridMMKVSpec::getIsReadOnly);
+      prototype.registerHybridMethod("initialize", &HybridMMKVSpec::initialize);
       prototype.registerHybridMethod("set", &HybridMMKVSpec::set);
       prototype.registerHybridMethod("getBoolean", &HybridMMKVSpec::getBoolean);
       prototype.registerHybridMethod("getString", &HybridMMKVSpec::getString);
