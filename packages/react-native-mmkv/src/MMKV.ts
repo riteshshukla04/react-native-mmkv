@@ -4,13 +4,13 @@ import { createMMKV } from './createMMKV/createMMKV'
 
 /**
  * MMKV constructor function that creates a native HybridObject instance.
- * 
+ *
  * This function can be used with or without the `new` keyword:
  * ```ts
  * const storage1 = new MMKV({ id: 'user-storage' })
  * const storage2 = MMKV({ id: 'app-storage' })
  * ```
- * 
+ *
  * @param config - Optional configuration for the MMKV instance
  * @returns A native MMKV HybridObject instance
  */
