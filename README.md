@@ -3,9 +3,9 @@
 
 <a href="https://margelo.com">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/img/banner-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/img/banner-light.png" />
-    <img alt="react-native-mmkv" src="./docs/img/banner-light.png" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/img/banner-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/img/banner-light.webp" />
+    <img alt="react-native-mmkv" src="./docs/img/banner-light.webp" />
   </picture>
 </a>
 
