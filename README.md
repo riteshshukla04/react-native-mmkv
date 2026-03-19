@@ -1,7 +1,7 @@
 | **V4 Docs** | [old V3 Docs](./README_V3.md) |
 |:---|:---|
 
-<a href="https://margelo.io">
+<a href="https://margelo.com">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./docs/img/banner-dark.png" />
     <source media="(prefers-color-scheme: light)" srcset="./docs/img/banner-light.png" />
