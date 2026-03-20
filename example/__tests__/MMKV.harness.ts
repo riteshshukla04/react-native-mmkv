@@ -619,6 +619,80 @@ describe('MMKV Encryption & Security', () => {
   });
 });
 
+describe('MMKV Compare Before Set', () => {
+  afterEach(() => {
+    try {
+      createMMKV({ id: 'compare-before-set-test' }).clearAll();
+      createMMKV({ id: 'compare-disabled-test' }).clearAll();
+    } catch {
+      // Instances might not exist, that's okay
+    }
+  });
+
+  it('should create instance with compareBeforeSet enabled', () => {
+    const storage = createMMKV({
+      id: 'compare-before-set-test',
+      compareBeforeSet: true,
+    });
+
+    storage.set('key', 'value');
+    expect(storage.getString('key')).toStrictEqual('value');
+
+    storage.set('key', 'updated');
+    expect(storage.getString('key')).toStrictEqual('updated');
+  });
+
+  it('should create instance with compareBeforeSet disabled', () => {
+    const storage = createMMKV({
+      id: 'compare-disabled-test',
+      compareBeforeSet: false,
+    });
+
+    storage.set('key', 'value');
+    expect(storage.getString('key')).toStrictEqual('value');
+
+    storage.set('key', 'updated');
+    expect(storage.getString('key')).toStrictEqual('updated');
+  });
+
+  it('should not change byteSize when setting same value with compareBeforeSet', () => {
+    const storage = createMMKV({
+      id: 'compare-before-set-test',
+      compareBeforeSet: true,
+    });
+
+    storage.set('str', 'hello');
+    storage.set('num', 42);
+    storage.set('bool', true);
+    storage.set('buf', new Uint8Array([1, 2, 3]).buffer);
+
+    const sizeAfterInitialSet = storage.byteSize;
+
+    // Set same values again
+    storage.set('str', 'hello');
+    storage.set('num', 42);
+    storage.set('bool', true);
+    storage.set('buf', new Uint8Array([1, 2, 3]).buffer);
+
+    // byteSize should not have changed
+    expect(storage.byteSize).toStrictEqual(sizeAfterInitialSet);
+  });
+
+  it('should change byteSize when setting a different value with compareBeforeSet', () => {
+    const storage = createMMKV({
+      id: 'compare-before-set-test',
+      compareBeforeSet: true,
+    });
+
+    storage.set('key', 'short');
+    const sizeAfterInitialSet = storage.byteSize;
+
+    // Set a longer value - byteSize should increase
+    storage.set('key', 'a much longer string value that takes more space');
+    expect(storage.byteSize).toBeGreaterThan(sizeAfterInitialSet);
+  });
+});
+
 describe('MMKV Storage Management', () => {
   let storage: MMKV;
 
