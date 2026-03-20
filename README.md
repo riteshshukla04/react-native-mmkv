@@ -110,8 +110,10 @@ export const storage = createMMKV({
   id: `user-${userId}-storage`,
   path: `${USER_DIRECTORY}/storage`,
   encryptionKey: 'hunter2',
+  encryptionType: 'AES-256',
   mode: 'multi-process',
-  readOnly: false
+  readOnly: false,
+  compareBeforeSet: false,
 })
 ```
 
@@ -122,8 +124,10 @@ The following values can be configured:
 * `id`: The MMKV instance's ID. If you want to use multiple instances, use different IDs. For example, you can separate the global app's storage and a logged-in user's storage. (required if `path` or `encryptionKey` fields are specified, otherwise defaults to: `'mmkv.default'`)
 * `path`: The MMKV instance's root path. By default, MMKV stores file inside `$(Documents)/mmkv/`. You can customize MMKV's root directory on MMKV initialization (documentation: [iOS](https://github.com/Tencent/MMKV/wiki/iOS_advance#customize-location) / [Android](https://github.com/Tencent/MMKV/wiki/android_advance#customize-location))
 * `encryptionKey`: The MMKV instance's encryption/decryption key. By default, MMKV stores all key-values in plain text on file, relying on iOS's/Android's sandbox to make sure the file is encrypted. Should you worry about information leaking, you can choose to encrypt MMKV. (documentation: [iOS](https://github.com/Tencent/MMKV/wiki/iOS_advance#encryption) / [Android](https://github.com/Tencent/MMKV/wiki/android_advance#encryption))
+* `encryptionType`: The MMKV instance's encryption/decryption algorithm. By default, AES-128 encryption will be used, but you can switch to AES-256 for advanced security.
 * `mode`: The MMKV's process behaviour - when set to `multi-process`, the MMKV instance will assume data can be changed from the outside (e.g. App Clips, Extensions or App Groups).
 * `readOnly`: Whether this MMKV instance should be in read-only mode. This is typically more efficient and avoids unwanted writes to the data if not needed. Any call to `set(..)` will throw.
+* `compareBeforeSet`: Whether this MMKV instance will compare values for equality before writing them to disk. By default this is disabled, enabling it might improve performance if values are repeatedly written to disk, even if they are already persisted.
 
 ### Set
 
@@ -146,7 +150,7 @@ const isMmkvFastAsf = storage.getBoolean('is-mmkv-fast-asf') // true
 ```ts
 const [username, setUsername] = useMMKVString('user.name')
 const [age, setAge] = useMMKVNumber('user.age')
-const [isMmkvFastAsf, setIsMmkvFastAf] = useMMKVBoolean('is-mmkv-fast-asf')
+const [isMmkvFastAsf, setIsMmkvFastAsf] = useMMKVBoolean('is-mmkv-fast-asf')
 ```
 
 ### Keys
@@ -274,8 +278,8 @@ If a user chooses to disable LocalStorage in their browser, the library will aut
 
 ## Limitations
 
-- react-native-mmkv V3 requires react-native 0.74 or higher.
-- react-native-mmkv V3 requires [the new architecture](https://reactnative.dev/docs/the-new-architecture/landing-page)/TurboModules to be enabled.
+- react-native-mmkv V4 requires react-native 0.74 or higher.
+- react-native-mmkv V4 requires [the new architecture](https://reactnative.dev/docs/the-new-architecture/landing-page)/TurboModules to be enabled.
 - Since react-native-mmkv uses JSI for synchronous native method invocations, remote debugging (e.g. with Chrome) is no longer possible. Instead, you should use [Flipper](https://fbflipper.com) or [React DevTools](https://react.dev/learn/react-developer-tools).
 
 ## Integrations
