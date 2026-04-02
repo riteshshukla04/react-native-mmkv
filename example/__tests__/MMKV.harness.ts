@@ -5,7 +5,12 @@ import {
   beforeEach,
   afterEach,
 } from 'react-native-harness';
+import { Platform } from 'react-native';
 import { MMKV, createMMKV, deleteMMKV, existsMMKV } from 'react-native-mmkv';
+
+const isWeb = Platform.OS === 'web';
+const describeNativeOnly = isWeb ? describe.skip : describe;
+const itNativeOnly = isWeb ? it.skip : it;
 
 const waitForNextTick = async () => {
   await new Promise<void>(resolve => setTimeout(resolve, 0));
@@ -224,7 +229,7 @@ describe('MMKV Core Functionality', () => {
   });
 
   describe('ArrayBuffer/Buffer Operations', () => {
-    it('should store and retrieve ArrayBuffer correctly', () => {
+    itNativeOnly('should store and retrieve ArrayBuffer correctly', () => {
       const key = 'bufferTest';
       const data = new Uint8Array([1, 2, 3, 4, 5, 255]);
       const buffer = data.buffer;
@@ -250,7 +255,7 @@ describe('MMKV Core Functionality', () => {
       expect(retrieved!.byteLength).toStrictEqual(0);
     });
 
-    it('should handle large ArrayBuffer', () => {
+    itNativeOnly('should handle large ArrayBuffer', () => {
       const key = 'largeBuffer';
       const size = 1024 * 1024; // 1MB
       const data = new Uint8Array(size);
@@ -274,7 +279,7 @@ describe('MMKV Core Functionality', () => {
       }
     });
 
-    it('should handle different typed arrays', () => {
+    itNativeOnly('should handle different typed arrays', () => {
       const int16Data = new Int16Array([1000, -1000, 32767, -32768]);
       const float32Data = new Float32Array([3.14159, -2.718, 1.414]);
       const uint32Data = new Uint32Array([0, 1, 4294967295]);
@@ -399,7 +404,7 @@ describe('MMKV Configuration & Multiple Instances', () => {
       instances.forEach(instance => instance.clearAll());
     });
 
-    it('should import other keys properly', () => {
+    itNativeOnly('should import other keys properly', () => {
       const storage1 = createMMKV({ id: 'first-storage' })
       const storage2 = createMMKV({ id: 'second-storage' })
       storage1.clearAll()
@@ -425,7 +430,7 @@ describe('MMKV Configuration & Multiple Instances', () => {
       expect(storage2.getBoolean('key3')).toStrictEqual(true)
     })
 
-    it('should handle instance properties correctly', () => {
+    itNativeOnly('should handle instance properties correctly', () => {
       const storage = createMMKV({ id: 'properties-test' });
 
       // Initially empty
@@ -445,7 +450,7 @@ describe('MMKV Configuration & Multiple Instances', () => {
   });
 });
 
-describe('MMKV Encryption & Security', () => {
+describeNativeOnly('MMKV Encryption & Security', () => {
   afterEach(() => {
     // Clean up encrypted instances
     try {
@@ -624,7 +629,7 @@ describe('MMKV Read-Only Mode', () => {
   // mode it cannot be reopened with a different mode in the same process.
   // These tests use an ID that is only ever opened as read-only.
 
-  it('should report isReadOnly as true', () => {
+  itNativeOnly('should report isReadOnly as true', () => {
     const storage = createMMKV({ id: 'read-only-fresh-test', readOnly: true });
     expect(storage.isReadOnly).toStrictEqual(true);
   });
@@ -635,25 +640,25 @@ describe('MMKV Read-Only Mode', () => {
     storage.clearAll();
   });
 
-  it('should throw when trying to set a value', () => {
+  itNativeOnly('should throw when trying to set a value', () => {
     const storage = createMMKV({ id: 'read-only-set-test', readOnly: true });
     expect(() => storage.set('key', 'value')).toThrow();
   });
 
-  it('should not remove values in read-only mode', () => {
+  itNativeOnly('should not remove values in read-only mode', () => {
     const storage = createMMKV({ id: 'read-only-remove-test', readOnly: true });
     // MMKV silently no-ops remove on read-only instances
     expect(storage.remove('key')).toStrictEqual(false);
   });
 
-  it('should not clear values in read-only mode', () => {
+  itNativeOnly('should not clear values in read-only mode', () => {
     const storage = createMMKV({ id: 'read-only-clear-test', readOnly: true });
     // MMKV silently no-ops clearAll on read-only instances
     storage.clearAll();
     expect(storage.length).toStrictEqual(0);
   });
 
-  it('should support contains and getAllKeys on empty read-only instance', () => {
+  itNativeOnly('should support contains and getAllKeys on empty read-only instance', () => {
     const storage = createMMKV({ id: 'read-only-keys-test', readOnly: true });
 
     expect(storage.contains('nonexistent')).toBe(false);
@@ -797,7 +802,7 @@ describe('MMKV Storage Management', () => {
       }
     });
 
-    it('should handle clearAll correctly', () => {
+    itNativeOnly('should handle clearAll correctly', () => {
       // Add various types of data
       storage.set('string-key', 'string-value');
       storage.set('number-key', 123.456);
@@ -954,7 +959,7 @@ describe('MMKV Multi-Process Mode', () => {
     expect(storage.getAllKeys()).toEqual([]);
   });
 
-  it('should support encryption in multi-process mode', () => {
+  itNativeOnly('should support encryption in multi-process mode', () => {
     const storage = createMMKV({
       id: 'multi-process-encrypted-test',
       mode: 'multi-process',
@@ -1135,7 +1140,7 @@ describe('Deleting instances and checking if they exist', () => {
   })
 
   describe('Checking if an instance exists', () => {
-    it('should exist', () => {
+    itNativeOnly('should exist', () => {
       createMMKV({ id: 'some-instance' })
       const exists = existsMMKV('some-instance')
       expect(exists).toStrictEqual(true)
@@ -1148,13 +1153,13 @@ describe('Deleting instances and checking if they exist', () => {
   })
 
   describe('Deleting an instance', () => {
-    it('should delete properly', () => {
+    itNativeOnly('should delete properly', () => {
       createMMKV({ id: 'some-instance' })
       const wasDeleted = deleteMMKV('some-instance')
       expect(wasDeleted).toStrictEqual(true)
     })
 
-    it('should delete properly and exists should be false', () => {
+    itNativeOnly('should delete properly and exists should be false', () => {
       createMMKV({ id: 'some-instance' })
       const wasDeleted = deleteMMKV('some-instance')
       expect(wasDeleted).toStrictEqual(true)

@@ -6,6 +6,10 @@ import {
   applePlatform,
   appleSimulator,
 } from '@react-native-harness/platform-apple';
+import {
+  webPlatform,
+  chromium,
+} from '@react-native-harness/platform-web';
 
 const config = {
   entryPoint: './index.js',
@@ -26,6 +30,10 @@ const config = {
       name: 'ios',
       device: appleSimulator('iPhone 16 Pro', '18.6'),
       bundleId: 'com.mrousavy.mmkv.example',
+    }),
+    webPlatform({
+      name: 'web',
+      browser: chromium('http://localhost:8081/web'),
     }),
   ],
   defaultRunner: 'android',

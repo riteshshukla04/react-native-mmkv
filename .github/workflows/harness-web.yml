@@ -1,0 +1,42 @@
+name: Harness Web
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/harness-web.yml"
+      - "packages/react-native-mmkv/src/**"
+      - "packages/react-native-mmkv/web/**"
+      - "**/bun.lock"
+      - "example/__tests__/**"
+      - "example/rn-harness.config.mjs"
+      - "example/metro.config.js"
+  pull_request:
+    paths:
+      - ".github/workflows/harness-web.yml"
+      - "packages/react-native-mmkv/src/**"
+      - "packages/react-native-mmkv/web/**"
+      - "**/bun.lock"
+      - "example/__tests__/**"
+      - "example/rn-harness.config.mjs"
+      - "example/metro.config.js"
+
+jobs:
+  harness_web:
+    name: Harness Web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install npm dependencies (bun)
+        run: bun install
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run Harness E2E tests
+        working-directory: example
+        run: bun run test:harness --harnessRunner web
