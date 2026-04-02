@@ -1,0 +1,141 @@
+diff --git a/dist/bundler/bundle.js b/dist/bundler/bundle.js
+index abc86b64d38265d8c605925ed71f6138f3b48e37..2b9d0c76756e93c22e3ab943931644c1fa6d14e1 100644
+--- a/dist/bundler/bundle.js
++++ b/dist/bundler/bundle.js
+@@ -8,7 +8,8 @@ const getModuleUrl = (fileName) => {
+         modulesOnly: 'true',
+         platform: Platform.OS,
+     });
+-    return `${devServerUrl}${bundleName}?${urlSearchParams.toString()}`;
++    const separator = devServerUrl.endsWith('/') ? '' : '/';
++    return `${devServerUrl}${separator}${bundleName}?${urlSearchParams.toString()}`;
+ };
+ export const fetchModule = async (fileName) => {
+     const url = getModuleUrl(fileName);
+diff --git a/dist/client/getDeviceDescriptor.js b/dist/client/getDeviceDescriptor.js
+index 5eb6509a36401c00840dbaa67b6867bf05809c0d..b46a14ab0f8f7b4a6e05f3a4adf04fe06dc2c4e9 100644
+--- a/dist/client/getDeviceDescriptor.js
++++ b/dist/client/getDeviceDescriptor.js
+@@ -28,5 +28,13 @@ export const getDeviceDescriptor = () => {
+             osVersion: '',
+         };
+     }
++    if (platform.OS === 'web') {
++        return {
++            platform: 'web',
++            manufacturer: 'Browser',
++            model: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
++            osVersion: '',
++        };
++    }
+     throw new Error('Unsupported platform');
+ };
+diff --git a/dist/entry-point.js b/dist/entry-point.js
+index 67a7e0bfadfb425187d3ce8cb60bb02f070be8a3..cd4b3c21993fb2984ff894057067dc4f1465c90d 100644
+--- a/dist/entry-point.js
++++ b/dist/entry-point.js
+@@ -1,4 +1,10 @@
+-import { AppRegistry } from 'react-native';
++import { AppRegistry, Platform } from 'react-native';
+ import { getHarnessGlobal } from './globals.js';
+ import { UI } from './ui/index.js';
+-AppRegistry.registerComponent(getHarnessGlobal().appRegistryComponentName, () => UI);
++const componentName = getHarnessGlobal().appRegistryComponentName;
++AppRegistry.registerComponent(componentName, () => UI);
++if (Platform.OS === 'web') {
++  AppRegistry.runApplication(componentName, {
++    rootTag: document.getElementById('root'),
++  });
++}
+diff --git a/dist/initialize.js b/dist/initialize.js
+index 226b47e27740d6bbf824e4c43fa17817bf20d043..7cfb085bab7165de0f9614349ee945f686732a75 100644
+--- a/dist/initialize.js
++++ b/dist/initialize.js
+@@ -1,3 +1,4 @@
++import { Platform } from 'react-native';
+ import { getDeviceDescriptor } from './client/getDeviceDescriptor.js';
+ import { getClient } from './client/index.js';
+ import { setupJestMock } from './jest-mock.js';
+@@ -7,19 +8,30 @@ globalThis.Event = Shim.Event;
+ globalThis.EventTarget = Shim.EventTarget;
+ // Setup jest mock to warn users about using Jest APIs
+ setupJestMock();
+-// Turn off LogBox
+-const { LogBox } = require('react-native');
+-LogBox.ignoreAllLogs(true);
+-// Turn off HMR
+-const HMRClientModule = require('react-native/Libraries/Utilities/HMRClient');
+-const HMRClient = 'default' in HMRClientModule ? HMRClientModule.default : HMRClientModule;
+-// Wait for HMRClient to be initialized
+-setTimeout(() => {
+-    HMRClient.disable();
+-    // Initialize the React Native Harness
+-    void getClient().then((client) => client.rpc.reportReady(getDeviceDescriptor()));
+-});
++
++if (Platform.OS !== 'web') {
++    // Turn off LogBox (not available on web)
++    const { LogBox } = require('react-native');
++    LogBox.ignoreAllLogs(true);
++    // Turn off HMR
++    const HMRClientModule = require('react-native/Libraries/Utilities/HMRClient');
++    const HMRClient = 'default' in HMRClientModule ? HMRClientModule.default : HMRClientModule;
++    // Wait for HMRClient to be initialized
++    setTimeout(() => {
++        HMRClient.disable();
++        // Initialize the React Native Harness
++        void getClient().then((client) => client.rpc.reportReady(getDeviceDescriptor()));
++    });
++} else {
++    // On web, initialize immediately (no LogBox/HMR to disable)
++    setTimeout(() => {
++        void getClient().then((client) => client.rpc.reportReady(getDeviceDescriptor()));
++    });
++}
++
+ // Re-throw fatal errors
+-ErrorUtils.setGlobalHandler((error) => {
+-    throw error;
+-});
++if (typeof ErrorUtils !== 'undefined') {
++    ErrorUtils.setGlobalHandler((error) => {
++        throw error;
++    });
++}
+diff --git a/dist/module.js b/dist/module.js
+index d1f0f10361db08a8d9aed99bbbb7ec8866f2f042..f6b0761b6571c64366cdfde7a937077aa4cafe36 100644
+--- a/dist/module.js
++++ b/dist/module.js
+@@ -1,15 +1,8 @@
+ import { Platform } from 'react-native';
+-import { URL, URLSearchParams } from 'react-native-url-polyfill';
+ const METRO_URL = 'http://localhost:8081';
+ const getModuleUrl = (fileName) => {
+-    const url = new URL(METRO_URL);
+     const bundleName = fileName.split('.').slice(0, -1).join('.') + '.bundle';
+-    url.search = new URLSearchParams({
+-        modulesOnly: 'true',
+-        platform: Platform.OS,
+-    }).toString();
+-    url.pathname = `/${bundleName}`;
+-    return url.toString();
++    return `${METRO_URL}/${bundleName}?modulesOnly=true&platform=${Platform.OS}`;
+ };
+ export const fetchModule = async (fileName) => {
+     const url = getModuleUrl(fileName);
+diff --git a/dist/utils/dev-server.js b/dist/utils/dev-server.js
+index 081a026db02196ff8fff565599ec53874b664fe7..58628769be9d62970e3a3087c8b3d446bf1146fd 100644
+--- a/dist/utils/dev-server.js
++++ b/dist/utils/dev-server.js
+@@ -1,5 +1,10 @@
+-import getDevServer from 'react-native/Libraries/Core/Devtools/getDevServer';
++import { Platform } from 'react-native';
++
+ export const getDevServerUrl = () => {
++    if (Platform.OS === 'web' && typeof window !== 'undefined') {
++        return window.location.origin;
++    }
++    const getDevServer = require('react-native/Libraries/Core/Devtools/getDevServer');
+     const devServer = getDevServer();
+     return devServer.url;
+ };
