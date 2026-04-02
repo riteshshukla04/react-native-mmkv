@@ -37,6 +37,9 @@ jobs:
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
 
+      - name: Apply harness web support patches
+        run: git apply example/patches/harness-web-support.patch --directory=node_modules/@react-native-harness/runtime
+
       - name: Run Harness E2E tests
         working-directory: example
         run: bun run test:harness --harnessRunner web

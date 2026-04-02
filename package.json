@@ -85,8 +85,5 @@
         }
       }
     }
-  },
-  "patchedDependencies": {
-    "@react-native-harness/runtime@1.0.0-alpha.19": "patches/@react-native-harness%2Fruntime@1.0.0-alpha.19.patch"
   }
 }
