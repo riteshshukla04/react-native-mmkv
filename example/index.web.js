@@ -13,7 +13,7 @@ AppRegistry.registerComponent(appName, () => App);
 if (typeof document !== 'undefined') {
   const rootTag = document.getElementById('root');
   // Skip when the harness runtime is driving the page — it manages mounting.
-  if (rootTag && !globalThis.__RN_HARNESS_BRIDGE__) {
+  if (rootTag && !window.__RN_HARNESS_BRIDGE__) {
     AppRegistry.runApplication(appName, { rootTag });
   }
 }
