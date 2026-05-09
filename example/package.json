@@ -11,6 +11,7 @@
     "test": "jest",
     "test:harness": "react-native-harness",
     "web:proxy": "node ./scripts/web-proxy.mjs",
+    "web:dev": "node ./scripts/web-dev.mjs",
     "bundle-install": "bundle install",
     "pods": "bundle install && cd ios && bundle exec pod install",
     "build:android-release": "cd android && ./gradlew assembleRelease --no-daemon"
