@@ -1,0 +1,52 @@
+name: Harness Web
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/harness-web.yml"
+      - "packages/react-native-mmkv/src/**"
+      - "packages/react-native-mmkv/lib/**"
+      - "**/bun.lock"
+      - "**/react-native.config.js"
+      - "**/nitro.json"
+      - "example/__tests__/**"
+      - "example/rn-harness.config.mjs"
+      - "example/metro.config.js"
+      - "example/babel.config.js"
+      - "example/app.json"
+      - "example/index.js"
+  pull_request:
+    paths:
+      - ".github/workflows/harness-web.yml"
+      - "packages/react-native-mmkv/src/**"
+      - "packages/react-native-mmkv/lib/**"
+      - "**/bun.lock"
+      - "**/react-native.config.js"
+      - "**/nitro.json"
+      - "example/__tests__/**"
+      - "example/rn-harness.config.mjs"
+      - "example/metro.config.js"
+      - "example/babel.config.js"
+      - "example/app.json"
+      - "example/index.js"
+
+jobs:
+  harness_web:
+    name: Harness Web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install npm dependencies (bun)
+        run: bun install
+
+      - name: Install Playwright Chromium
+        working-directory: example
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run Harness Web tests
+        working-directory: example
+        run: bun run test:harness --harnessRunner web

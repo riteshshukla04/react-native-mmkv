@@ -31,5 +31,15 @@ target 'MmkvExample' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+    # Workaround for fmt library failing to compile under newer Xcode
+    # versions (consteval errors). Force fmt to use constexpr instead.
+    installer.pods_project.targets.each do |target|
+      if target.name == 'fmt'
+        target.build_configurations.each do |config|
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FMT_USE_CONSTEVAL=0'
+        end
+      end
+    end
   end
 end

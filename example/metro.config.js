@@ -1,14 +1,28 @@
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 const path = require('path');
 
-/**
- * Metro configuration
- * https://reactnative.dev/docs/metro
- *
- * @type {import('@react-native/metro-config').MetroConfig}
- */
-const config = {
+/** @type {import('@react-native/metro-config').MetroConfig} */
+const overrides = {
   watchFolders: [path.resolve(__dirname, '..')],
+  resolver: {
+    platforms: ['web', 'ios', 'android', 'native'],
+  },
 };
 
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+const config = mergeConfig(getDefaultConfig(__dirname), overrides);
+
+const upstreamResolveRequest = config.resolver.resolveRequest;
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (
+    platform === 'web' &&
+    (moduleName === 'react-native' || moduleName === 'react-native/index')
+  ) {
+    return context.resolveRequest(context, 'react-native-web', platform);
+  }
+  if (upstreamResolveRequest) {
+    return upstreamResolveRequest(context, moduleName, platform);
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
+
+module.exports = config;
