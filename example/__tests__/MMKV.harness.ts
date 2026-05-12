@@ -10,7 +10,7 @@ import { MMKV, createMMKV, deleteMMKV, existsMMKV } from 'react-native-mmkv';
 
 const skipOnWeb = (reason: string): boolean => {
   if (Platform.OS === 'web') {
-    // eslint-disable-next-line no-console
+     
     console.log(`[skip · web] ${reason}`);
     return true;
   }
